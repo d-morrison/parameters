@@ -339,11 +339,23 @@
     ## TODO "profile" seems to be less stable, so only wald? Need to mention in docs!
     out <- tryCatch(
       {
-        var_ci <- rbind(
-          as.data.frame(suppressWarnings(stats::confint(model, parm = "theta_", method = "wald", level = ci))),
-          as.data.frame(suppressWarnings(stats::confint(model, parm = "sigma", method = "wald", level = ci)))
-        )
-        colnames(var_ci) <- c("CI_low", "CI_high", "not_used")
+
+        temp = suppressWarnings(
+          stats::confint(model, parm = "theta_", method = "wald", level = ci) |> as.data.frame()) |>
+          dplyr::bind_cols(
+            insight::find_random(model, flatten = FALSE) |>
+              stack() |>
+              dplyr::rename(Group = values, Component = ind) |>
+              dplyr::mutate(Component = if_else(Component == "random", "conditional", "zi"))
+          )
+
+        temp2 = as.data.frame(suppressWarnings(stats::confint(model, parm = "sigma", method = "wald", level = ci))) |>
+          dplyr::mutate(Group = "Residual", Component = "conditional")
+
+        var_ci <- dplyr::bind_rows(temp, temp2) |>
+          dplyr::rename()
+
+        colnames(var_ci)[1:3] <- c("CI_low", "CI_high", "not_used")
         var_ci$Component <- "conditional"
         group_factor <- insight::find_random(model, flatten = TRUE)
 
