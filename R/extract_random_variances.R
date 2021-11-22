@@ -339,23 +339,40 @@
     ## TODO "profile" seems to be less stable, so only wald? Need to mention in docs!
     out <- tryCatch(
       {
-        var_ci <- rbind(
-          as.data.frame(suppressWarnings(stats::confint(model, parm = "theta_", method = "wald", level = ci))),
-          as.data.frame(suppressWarnings(stats::confint(model, parm = "sigma", method = "wald", level = ci)))
-        )
-        colnames(var_ci) <- c("CI_low", "CI_high", "not_used")
-        var_ci$Component <- "conditional"
-        group_factor <- insight::find_random(model, flatten = TRUE)
+        thetas = as.data.frame(suppressWarnings(stats::confint(model, parm = "theta_", method = "wald", level = ci))) |>
+          dplyr::bind_cols(
+            stack(insight::find_random(model, flatten = FALSE)) |>
+              dplyr::rename(
+                Group = values,
+                Component = ind
+              )) |>
+          dplyr::mutate(
+            Component = if_else(Component == "random", "conditional", "zi")
+          )
+
+        sigmas = as.data.frame(suppressWarnings(stats::confint(model, parm = "sigma", method = "wald", level = ci))) |>
+          dplyr::mutate(
+            Group = "Residual",
+            Component = "disp")
+
+        var_ci <- dplyr::bind_rows(
+          thetas,
+          sigmas)
+
+        colnames(var_ci)[1:3] <- c("CI_low", "CI_high", "not_used")
 
         var_ci$Parameter <- row.names(var_ci)
-        pattern <- paste0("^(zi\\.|", group_factor, "\\.zi\\.)")
-        zi_rows <- grepl(pattern, var_ci$Parameter)
-        if (any(zi_rows)) {
-          var_ci$Component[zi_rows] <- "zi"
-        }
+
+        zi_rows <- var_ci$Component = "zi"
 
         # remove cond/zi prefix
-        pattern <- paste0("^(cond\\.|zi\\.|", group_factor, "\\.cond\\.|", group_factor, "\\.zi\\.)(.*)")
+        pattern <- paste0(
+          "^(cond\\.|zi\\.|",
+          paste0(group_factor, "\\.cond\\.", collapse = "|"),
+          "|",
+          paste0(group_factor, "\\.zi\\.", collapse = "|"),
+          ")(.*)")
+
         var_ci$Parameter <- gsub(pattern, "\\2", var_ci$Parameter)
         # fix SD and Cor names
         var_ci$Parameter <- gsub(".Intercept.", "(Intercept)", var_ci$Parameter, fixed = TRUE)
@@ -392,3 +409,289 @@
 
   out
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
